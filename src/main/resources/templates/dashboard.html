@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>TalentBridge HR Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
+        .topbar { background: #1a3c6e; color: white; padding: 12px 40px;
+                  display: flex; justify-content: space-between; align-items: center; }
+        .topbar h1 { font-size: 1.2rem; }
+        .btn-admin { background: #e74c3c; color: white; padding: 8px 14px;
+                     text-decoration: none; border-radius: 5px; font-size: .85rem; }
+        .main { max-width: 860px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 10px; padding: 24px;
+                margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        .card h2 { font-size: 1rem; color: #1a3c6e; margin-bottom: 4px; }
+        .desc { color: #666; font-size: .85rem; margin-bottom: 14px; }
+        label { display: block; font-size: .85rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+        input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid #ccc;
+                             border-radius: 6px; font-size: .9rem; margin-bottom: 10px; }
+        input[type="text"]:focus { outline: none; border-color: #1a3c6e; }
+        .btn { padding: 9px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: .9rem; }
+        .btn-primary { background: #1a3c6e; color: white; }
+        .btn-green   { background: #27ae60; color: white; }
+        .error-msg   { color: #e74c3c; font-size: .85rem; margin-top: 8px; }
+        .tag-badge   { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 20px;
+                       background: #eaf0fb; color: #1a3c6e; border: 1px solid #c0cfe8; margin-bottom: 10px; }
+        .success-banner { background: #d4edda; border: 1px solid #c3e6cb; color: #155724;
+                          border-radius: 6px; padding: 12px 16px; margin-top: 12px; font-size: .9rem; }
+        .result-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;
+                      padding: 14px; margin-top: 14px; }
+        .result-box table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+        .result-box th { background: #1a3c6e; color: white; padding: 8px 10px; text-align: left; }
+        .result-box td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+        textarea.import-result { width: 100%; height: 140px; margin-top: 10px; font-family: monospace;
+                                  font-size: .78rem; padding: 10px; border: 1px solid #ccc;
+                                  border-radius: 6px; resize: vertical; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>🏢 TalentBridge — HR &amp; Recruitment Portal</h1>
+    <a href="/admin" class="btn-admin">Admin Panel</a>
+</div>
+
+<div class="main">
+
+    <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+
+    <!-- ══ 1. SQLi — JOB SEARCH ═══════════════════════════════════ -->
+    <div class="card">
+        <span class="tag-badge">Careers</span>
+        <h2>Search Open Positions</h2>
+        <p class="desc">
+            Enter a job title to browse available roles at TalentBridge.
+            Our system will show all matching positions and the team leads responsible for them.
+        </p>
+        <form action="/jobs/search" method="GET">
+            <label for="title">Job Title</label>
+            <input type="text" id="title" name="title"
+                   placeholder="e.g. Software Engineer">
+            <button type="submit" class="btn btn-primary">Search Positions</button>
+        </form>
+
+        <p class="error-msg" th:if="${sqlError}" th:text="${sqlError}"></p>
+
+        <!-- No results -->
+        <p class="desc" style="margin-top:10px"
+           th:if="${jobResults != null and #lists.size(jobResults) == 0}">
+            No positions found matching that title.
+        </p>
+
+        <!-- Normal single/few results -->
+        <div class="result-box"
+             th:if="${jobResults != null and #lists.size(jobResults) > 0}">
+            <table>
+                <thead><tr>
+                    <th>Job Title</th><th>Department</th><th>Description</th>
+                </tr></thead>
+                <tbody>
+                <tr th:each="r : ${jobResults}">
+                    <td th:text="${r.title}"></td>
+                    <td th:text="${r.department}"></td>
+                    <td style="font-family:monospace;color:#c0392b" th:text="${r.description}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══ 2. XSS — JOB APPLICATION ══════════════════════════════ -->
+    <div class="card">
+        <span class="tag-badge">Apply Now</span>
+        <h2>Submit a Job Application</h2>
+        <p class="desc">
+            Enter your full name to start your application process. Our recruitment team
+            will review your profile within 3–5 business days.
+        </p>
+        <form action="/" method="GET">
+            <label for="jobApplication">Full Name</label>
+            <input type="text" id="jobApplication" name="jobApplication"
+                   placeholder="e.g. John Doe">
+            <button type="submit" class="btn btn-green">Submit Application</button>
+        </form>
+
+        <!--
+            XSS: th:utext renders jobApplication WITHOUT escaping.
+            Payload: <img src=x onerror="alert(document.cookie)">
+        -->
+        <div class="success-banner" th:if="${jobApplication != null}">
+            🎉 Thank you for applying for: <strong><span th:utext="${jobApplication}"></span></strong><br>
+            <small>Our HR team will be in touch soon.</small>
+        </div>
+    </div>
+
+    <!-- ══ 3. SSRF — LINKEDIN IMPORTER ═══════════════════════════ -->
+    <div class="card">
+        <span class="tag-badge">Candidate Sourcing</span>
+        <h2>Import LinkedIn Profile</h2>
+        <p class="desc">
+            Paste a candidate's public LinkedIn profile URL to automatically
+            pull their experience into our recruitment database.
+        </p>
+        <form action="/import-profile" method="POST">
+            <label for="profileUrl">LinkedIn Profile URL</label>
+            <input type="text" id="profileUrl" name="profileUrl"
+                   placeholder="https://www.linkedin.com/in/username">
+            <button type="submit" class="btn btn-primary">Import Profile</button>
+        </form>
+
+        <div th:if="${importedData}">
+            <p style="margin-top:12px;font-size:.85rem;color:#555">Fetched content:</p>
+            <textarea class="import-result" readonly th:text="${importedData}"></textarea>
+        </div>
+    </div>
+
+    <!-- ══ 4. IDOR — unchanged ════════════════════════════════════ -->
+    <div class="card">
+        <span class="tag-badge">Employee Self-Service</span>
+        <h2>View My Profile</h2>
+        <p class="desc">Your current user ID is 1. Click below to view your profile.</p>
+        <a href="/profile?id=1"
+           style="display:inline-block;padding:9px 18px;background:#27ae60;
+                  color:white;text-decoration:none;border-radius:6px;font-size:.9rem">
+            View My Profile
+        </a>
+    </div>
+
+</div>
+</body>
+</html>

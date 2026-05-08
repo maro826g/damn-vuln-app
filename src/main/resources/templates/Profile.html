@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Profile — TalentBridge</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0;
+               background: #f0f2f5; color: #333; }
+        .topbar { background: #1a3c6e; color: white; padding: 12px 40px;
+                  display: flex; justify-content: space-between; align-items: center; }
+        .topbar h1 { font-size: 1.2rem; }
+        .back-btn { background: white; color: #1a3c6e; padding: 7px 14px;
+                    text-decoration: none; border-radius: 5px; font-size: .85rem;
+                    font-weight: 600; }
+        .main { max-width: 640px; margin: 40px auto; padding: 0 20px; }
+
+        /* not found card */
+        .not-found { background: white; border-radius: 10px; padding: 40px;
+                     text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        .not-found h2 { color: #e74c3c; margin-bottom: 8px; }
+        .not-found p  { color: #666; font-size: .9rem; }
+
+        /* profile card */
+        .profile-card { background: white; border-radius: 10px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden; }
+        .profile-header { background: #1a3c6e; padding: 30px; display: flex;
+                          align-items: center; gap: 20px; }
+        .avatar { width: 72px; height: 72px; border-radius: 50%;
+                  background: #fff3; display: flex; align-items: center;
+                  justify-content: center; font-size: 2rem; }
+        .profile-header h2 { color: white; margin: 0 0 4px; font-size: 1.3rem; }
+        .profile-header p  { color: #a8c4e8; margin: 0; font-size: .85rem; }
+        .admin-crown { font-size: .75rem; background: #f39c12; color: white;
+                       padding: 2px 8px; border-radius: 20px; margin-left: 8px;
+                       vertical-align: middle; }
+
+        .profile-body { padding: 24px; }
+        .field-row { display: flex; justify-content: space-between;
+                     padding: 11px 0; border-bottom: 1px solid #f0f0f0;
+                     font-size: .9rem; }
+        .field-row:last-child { border-bottom: none; }
+        .field-label { color: #888; font-weight: 600; font-size: .8rem;
+                       text-transform: uppercase; letter-spacing: .4px; }
+        .field-value { color: #333; font-weight: 500; }
+        .field-value.salary { color: #27ae60; font-weight: 700; }
+        .field-value.id-value { font-family: monospace; color: #888; }
+
+        /* flag box */
+        .flag-box { margin: 20px 24px 24px; background: #fff3cd;
+                    border: 2px dashed #f39c12; border-radius: 8px;
+                    padding: 16px; text-align: center; }
+        .flag-box p { margin: 0 0 6px; font-size: .8rem; color: #856404;
+                      font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .flag-box code { font-size: 1rem; font-weight: 700; color: #d63031;
+                         letter-spacing: .5px; }
+
+        .id-warning { background: #fff3f3; border: 1px solid #f5c6cb;
+                      border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;
+                      font-size: .8rem; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>🏢 TalentBridge — Employee Profile</h1>
+    <a href="/" class="back-btn">← Back to Portal</a>
+</div>
+
+<div class="main">
+
+    <!-- ── NOT FOUND ─────────────────────────────────────── -->
+    <div class="not-found" th:if="${name == null}">
+        <h2>Profile Not Found</h2>
+        <p>No employee record exists for ID <strong th:text="${profileId}"></strong>.</p>
+        <a href="/profile?id=1" style="display:inline-block;margin-top:16px;
+           padding:9px 20px;background:#1a3c6e;color:white;
+           text-decoration:none;border-radius:6px;font-size:.9rem;">
+            View My Profile
+        </a>
+    </div>
+
+    <!-- ── PROFILE FOUND ──────────────────────────────────── -->
+    <div th:if="${name != null}">
+
+
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar" th:text="${isAdmin} ? '👑' : '👤'"></div>
+                <div>
+                    <h2>
+                        <span th:text="${name}"></span>
+                        <span class="admin-crown" th:if="${isAdmin}">ADMIN</span>
+                    </h2>
+                    <p th:text="${role} + ' — ' + ${department}"></p>
+                </div>
+            </div>
+
+            <div class="profile-body">
+                <div class="field-row">
+                    <span class="field-label">Employee ID</span>
+                    <span class="field-value id-value" th:text="${profileId}"></span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Full Name</span>
+                    <span class="field-value" th:text="${name}"></span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Email</span>
+                    <span class="field-value" th:text="${email}"></span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Department</span>
+                    <span class="field-value" th:text="${department}"></span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Role</span>
+                    <span class="field-value" th:text="${role}"></span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Annual Salary</span>
+                    <span class="field-value salary" th:text="${salary}"></span>
+                </div>
+            </div>
+
+            <!-- Flag only shown on id=1337 -->
+            <div class="flag-box" th:if="${flag != null}">
+                <p>🏴 You accessed a restricted profile — flag captured</p>
+                <code th:text="${flag}"></code>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
